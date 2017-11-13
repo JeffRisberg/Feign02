@@ -5,17 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
 import feign.Headers;
 import feign.Logger;
-import feign.Param;
 import feign.RequestLine;
-import feign.Response;
-import feign.codec.Decoder;
-import feign.codec.ErrorDecoder;
 import feign.jackson.JacksonDecoder;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Inspired by {@code com.example.retrofit.GitHubClient}
@@ -23,20 +17,20 @@ import java.util.stream.Collectors;
 public class Main {
 
     @Headers("Accept: application/json")
-    interface StateData {
+    interface CountryData {
 
         @JsonIgnoreProperties(ignoreUnknown = true)
-        class StateList {
-            List<State> country_fact_sheets = new ArrayList<State>();
+        class CountryList {
+            List<Country> country_fact_sheets = new ArrayList<Country>();
             String api_version;
             Integer page;
             Integer per_page;
 
-            public List<State> getCountry_fact_sheets() {
+            public List<Country> getCountry_fact_sheets() {
                 return country_fact_sheets;
             }
 
-            public void setCountry_fact_sheets(List<State> country_fact_sheets) {
+            public void setCountry_fact_sheets(List<Country> country_fact_sheets) {
                 this.country_fact_sheets = country_fact_sheets;
             }
 
@@ -66,17 +60,9 @@ public class Main {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
-        class State {
-            Integer id;
+        class Country {
             String title;
-
-            public Integer getId() {
-                return id;
-            }
-
-            public void setId(Integer id) {
-                this.id = id;
-            }
+            List<String> terms;
 
             public String getTitle() {
                 return title;
@@ -85,37 +71,45 @@ public class Main {
             public void setTitle(String title) {
                 this.title = title;
             }
+
+            public List<String> getTerms() {
+                return terms;
+            }
+
+            public void setTerms(List<String> terms) {
+                this.terms = terms;
+            }
         }
 
-        @RequestLine("GET /api/v1/?command=get_country_fact_sheets&page=0")
-        StateList states();
+        @RequestLine("GET /api/v1/?command=get_country_fact_sheets&fields=title,terms&terms=mexico:any,peru:any")
+        CountryList countries();
 
         /**
-         * Lists all states
+         * Lists all countries
          */
-        default StateList allStates() {
-            return states();
+        default CountryList allCountries() {
+            return countries();
         }
 
-        static StateData connect() {
+        static CountryData connect() {
             ObjectMapper mapper = new ObjectMapper();
 
             return Feign.builder()
                     .decoder(new JacksonDecoder(mapper))
                     .logger(new Logger.ErrorLogger())
                     .logLevel(Logger.Level.BASIC)
-                    .target(StateData.class, "https://www.state.gov");
+                    .target(CountryData.class, "https://www.state.gov");
         }
     }
 
     public static void main(String... args) {
 
         try {
-            StateData stateData = StateData.connect();
-            StateData.StateList stateList = stateData.allStates();
-            System.out.println(stateList);
-            for (StateData.State state : stateList.country_fact_sheets) {
-                System.out.println(state.id + " " + state.title);
+            CountryData countryData = CountryData.connect();
+            CountryData.CountryList countryList = countryData.allCountries();
+
+            for (CountryData.Country country : countryList.country_fact_sheets) {
+                System.out.println(country.title + " " + country.terms);
             }
         } catch (Exception e) {
             e.printStackTrace();

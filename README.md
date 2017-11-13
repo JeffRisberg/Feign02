@@ -1,1 +1,1 @@
-## More Advanced Feign example, which fetches against US Govt state data source.
+## More Advanced Feign example, which fetches against US Govt country data source.
